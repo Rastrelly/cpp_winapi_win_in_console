@@ -1,7 +1,7 @@
 ﻿//based off: https://cplusplus.com/forum/windows/219154/
 
 #include <iostream>
-#include<windows.h>
+#include <windows.h>
 #include <thread>
 #include <string>
 
@@ -10,9 +10,9 @@
 using namespace std;
 
 HWND hwnd; //our window
-HWND label1, button1;
+HWND label1, button1;  //control elements
 
-UINT updMsg = 0;
+UINT updMsg = 0; //ID of our message
 
 int n=0;
 bool leave=false;
@@ -20,7 +20,7 @@ bool leave=false;
 //message processor callback
 LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam);
 
-//type conversion
+//type conversion (int to wchar)
 LPCWSTR inttowchar(int val)
 {
 	wchar_t buf[2048];
@@ -96,13 +96,21 @@ int conThread()
 //main func
 int main()
 {
+	//registering our message ID to send messages from console thread to 
+	//window thread
 	updMsg = ::RegisterWindowMessage(L"WM_UPDATE_DATA");
 	cout << "Mess ID = " << updMsg << endl;
 
+	//starting threads
 	thread conThreadObj(conThread);
 	thread winThreadObj(winThread);
+
+	//ending threads (threads are looped, so join() will
+	//work when both threads are finished)
 	conThreadObj.join();
 	winThreadObj.join();
+
+	return 0;
 }
 
 LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam)
