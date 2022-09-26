@@ -32,17 +32,17 @@ LPCWSTR inttowchar(int val)
 int winThread()
 {
 	WNDCLASS ourWindow = { 0 };
-	WNDCLASS windowClass = { 0 };
-	windowClass.hbrBackground = (HBRUSH)GetStockObject(WHITE_BRUSH);
-	windowClass.hCursor = LoadCursor(NULL, IDC_ARROW);
-	windowClass.hInstance = NULL;
-	windowClass.lpfnWndProc = WndProc;
-	windowClass.lpszClassName = L"Window in Console"; //L symbol is
-	//generally equal to (LPCWSTR)"Window in Console"
-	windowClass.style = CS_HREDRAW | CS_VREDRAW;
-	if (!RegisterClass(&windowClass))
+	ourWindow.hbrBackground = (HBRUSH)GetStockObject(WHITE_BRUSH);
+	ourWindow.hCursor = LoadCursor(NULL, IDC_ARROW);
+	ourWindow.hInstance = NULL;
+	ourWindow.lpfnWndProc = WndProc;
+	ourWindow.lpszClassName = L"Window in Console"; //L symbol is
+													//generally equal to 
+													//(LPCWSTR)"Window in Console"
+	ourWindow.style = CS_HREDRAW | CS_VREDRAW;
+	if (!RegisterClass(&ourWindow))
 		MessageBox(NULL, L"Could not register class", L"Error", MB_OK);
-	hwnd = CreateWindow(windowClass.lpszClassName,
+	hwnd = CreateWindow(ourWindow.lpszClassName,
 		L"Window in Console",
 		WS_SYSMENU | WS_MINIMIZEBOX | WS_CAPTION,
 		900,
