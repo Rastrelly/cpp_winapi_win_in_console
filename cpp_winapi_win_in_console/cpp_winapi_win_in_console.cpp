@@ -27,6 +27,8 @@ public:
 	int getn() { return n; } //get our counter value
 };
 
+//keep counter as hared pointer so that it's termination would be only possible 
+//when it is no longer needed
 std::shared_ptr<counter> n = std::make_shared<counter>();
 
 //use atmoic type bool for thread safety as an exit flag
@@ -154,6 +156,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam)
 	//program exit clauses	
 	case WM_DESTROY:
 		leave = true;
+		std::cout << "Input any command to stop execution." << std::endl;
 		PostQuitMessage(0);
 		break;
 	default:
