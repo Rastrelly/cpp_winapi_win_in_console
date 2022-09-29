@@ -1,31 +1,44 @@
 ﻿//based off: https://cplusplus.com/forum/windows/219154/
+//additional thanks for very good pointers to you-know-who-you-are :D
 
 #include <iostream>
 #include <windows.h>
 #include <thread>
 #include <string>
+#include <atomic>
 
 #define BUTTON1 101
 
-using namespace std;
+typedef TCHAR TCHARARRAY[_MAX_INT_DIG];
 
 HWND hwnd; //our window
 HWND label1, button1;  //control elements
 
 UINT updMsg = 0; //ID of our message
 
-int n=0;
-bool leave=false;
+//using a shared pointer as a counter for thread safety
+class counter 
+{
+private: int n;
+public: 
+	counter() { n = 0; } //counstructor restes counter
+	void inc() { n ++; } //n++
+	void inc(int val) { n+=val; } //polymorphic n+= 
+	int getn() { return n; } //get our counter value
+};
+
+std::shared_ptr<counter> n = std::make_shared<counter>();
+
+//use atmoic type bool for thread safety as an exit flag
+std::atomic<bool> leave=false; 
 
 //message processor callback
 LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam);
 
 //type conversion (int to wchar)
-LPCWSTR inttowchar(int val)
+void intToWChar(int val, TCHARARRAY &wc_data)
 {
-	wchar_t buf[2048];
-	swprintf(buf, 2048, L"%d", val);
-	return (LPCWSTR)buf;
+	_itow_s(val, wc_data, 10);
 }
 
 //window thread
@@ -81,14 +94,15 @@ int winThread()
 //console thread
 int conThread()
 {
-	while (true)
-	{
-		int a = 0;
-		cout << "Input a:\n";
-		cin >> a;
-		n += a;
+	std::cout << "Input a:\n";
+	int a = 0;
+	while ((!leave) && (std::cin >> a))
+	{		
+		n->inc(a);
+
 		SendMessage(hwnd, updMsg,a,NULL);
-		if (leave) break;
+
+		std::cout << "Input a:\n";
 	}
 	return 0;
 }
@@ -99,11 +113,11 @@ int main()
 	//registering our message ID to send messages from console thread to 
 	//window thread
 	updMsg = ::RegisterWindowMessage(L"WM_UPDATE_DATA");
-	cout << "Mess ID = " << updMsg << endl;
+	std::cout << "Mess ID = " << updMsg << std::endl;
 
 	//starting threads
-	thread conThreadObj(conThread);
-	thread winThreadObj(winThread);
+	std::thread conThreadObj(conThread);
+	std::thread winThreadObj(winThread);
 
 	//ending threads (threads are looped, so join() will
 	//work when both threads are finished)
@@ -118,9 +132,10 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam)
 
 	if (message==updMsg) //TREAD SAFE
 	{
-		LPCWSTR str_n = inttowchar(n);
-		SetWindowText(label1, str_n);
-		cout << "Got data update: " << (int)wparam << endl;
+		TCHARARRAY data;
+		intToWChar(n->getn(), data);
+		SetWindowText(label1, (LPCWSTR)data);
+		std::cout << "Got data update: " << (int)wparam << std::endl;
 	}
 
 	switch (message)
@@ -129,8 +144,9 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam)
 	{
 		if (wparam == BUTTON1) //NOT THREAD SAFE
 		{
-			LPCWSTR str_n = inttowchar(n);
-			SetWindowText(label1, str_n);
+			TCHARARRAY data;
+			intToWChar(n->getn(), data);
+			SetWindowText(label1, (LPCWSTR)data);
 		}
 		break;
 	}
